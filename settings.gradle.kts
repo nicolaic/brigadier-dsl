@@ -1,1 +1,1 @@
-rootProject.name = "class-brigadier"
+rootProject.name = "brigadier-dsl"
