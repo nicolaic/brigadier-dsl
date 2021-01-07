@@ -49,19 +49,13 @@ class DslCommandBuilder<S> internal constructor(private val dslNode: DslCommandN
     fun literal(literal: String, block: (DslCommandBuilder<S>.() -> Unit)? = null): DslCommandBuilder<S> {
         val literalNode = dslNode.literal(literal)
 
-        val builder = DslCommandBuilder(literalNode)
-        block?.invoke(builder)
-
-        return builder
+        return DslCommandBuilder(literalNode).also { block?.invoke(it) }
     }
 
     fun literals(vararg literals: String, block: (DslCommandBuilder<S>.() -> Unit)? = null): DslCommandBuilder<S> {
         val literalNode = literals.fold(dslNode) { node, literal -> node.literal(literal) }
 
-        val builder = DslCommandBuilder(literalNode)
-        block?.invoke(builder)
-
-        return builder
+        return DslCommandBuilder(literalNode).also { block?.invoke(it) }
     }
 
     fun <T> arg(arg: RequiredArgument<S, T>, block: DslCommandBuilder<S>.(() -> T) -> Unit) {

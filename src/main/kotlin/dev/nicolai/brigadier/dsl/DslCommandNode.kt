@@ -27,13 +27,13 @@ import dev.nicolai.brigadier.CommandArgument
 sealed class DslCommandNode<S, A : ArgumentBuilder<S, out A>>(
     private val contextRef: ContextRef<S>
 ) {
-    private var executes: ((CommandContext<S>) -> Int)? = null
+    private var command: ((CommandContext<S>) -> Int)? = null
 
     private val children = mutableListOf<DslCommandNode<S, out ArgumentBuilder<S, *>>>()
     private val subcommands = mutableListOf<Command<S>>()
 
     fun executes(command: (CommandContext<S>) -> Int) {
-        executes = command
+        this.command = command
     }
 
     fun runs(command: (S) -> Unit) {
@@ -60,10 +60,10 @@ sealed class DslCommandNode<S, A : ArgumentBuilder<S, out A>>(
     fun buildTree(): A {
         val node = buildNode()
 
-        executes?.let { executes ->
+        command?.let { command ->
             node.executes { context ->
                 contextRef.context = context
-                executes.invoke(context)
+                command(context)
             }
         }
 
