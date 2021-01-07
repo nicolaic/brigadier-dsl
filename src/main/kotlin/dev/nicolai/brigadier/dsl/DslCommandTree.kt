@@ -43,12 +43,18 @@ sealed class DslCommandTree<S, A : ArgumentBuilder<S, out A>>(
         }
     }
 
-    fun literal(literal: String): LiteralDslCommandNode<S> {
-        return LiteralDslCommandNode(literal, contextRef).also { children += it }
+    fun literal(
+        literal: String,
+        apply: (LiteralArgumentBuilder<S>.() -> Unit)?
+    ): LiteralDslCommandNode<S> {
+        return LiteralDslCommandNode(literal, apply, contextRef).also { children += it }
     }
 
-    fun <T, V> argument(argument: CommandArgument<S, T, V>): ArgumentDslCommandNode<S, T, V> {
-        return ArgumentDslCommandNode(argument, contextRef).also { children += it }
+    fun <T, V> argument(
+        argument: CommandArgument<S, T, V>,
+        apply: (RequiredArgumentBuilder<S, T>.() -> Unit)?
+    ): ArgumentDslCommandNode<S, T, V> {
+        return ArgumentDslCommandNode(argument, apply, contextRef).also { children += it }
     }
 
     fun subcommands(vararg commands: Command<S>) {
@@ -81,19 +87,22 @@ sealed class DslCommandTree<S, A : ArgumentBuilder<S, out A>>(
 
 class LiteralDslCommandNode<S>(
     private val literal: String,
+    private val apply: (LiteralArgumentBuilder<S>.() -> Unit)?,
     contextRef: ContextRef<S>
 ) : DslCommandTree<S, LiteralArgumentBuilder<S>>(contextRef) {
-    override fun buildNode(): LiteralArgumentBuilder<S> = LiteralArgumentBuilder.literal(literal)
+    override fun buildNode(): LiteralArgumentBuilder<S> =
+        LiteralArgumentBuilder.literal<S>(literal).also { apply?.invoke(it) }
 }
 
 class ArgumentDslCommandNode<S, T, V>(
     private val argument: CommandArgument<S, T, V>,
+    private val apply: (RequiredArgumentBuilder<S, T>.() -> Unit)?,
     contextRef: ContextRef<S>
 ) : DslCommandTree<S, RequiredArgumentBuilder<S, T>>(contextRef) {
 
     val getter: () -> V = { argument.getValue(contextRef.context) }
 
-    override fun buildNode() = argument.buildArgument()
+    override fun buildNode() = argument.also { apply?.let(it::apply) }.buildArgument()
 }
 
 class ContextRef<S> {
