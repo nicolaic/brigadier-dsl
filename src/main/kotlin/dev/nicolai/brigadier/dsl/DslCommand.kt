@@ -21,7 +21,7 @@ import com.mojang.brigadier.context.CommandContext
 import dev.nicolai.brigadier.Command
 import dev.nicolai.brigadier.RequiredArgument
 
-class DslCommand<S>(
+open class DslCommand<S>(
     private val literal: String,
     private val builderBlock: (DslCommandBuilder<S>.() -> Unit)
 ) : Command<S> {
