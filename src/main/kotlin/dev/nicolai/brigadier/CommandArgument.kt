@@ -20,17 +20,17 @@ import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 
-sealed class CommandArgument<S, T> {
+sealed class CommandArgument<S, T, out V> {
 
-    abstract fun getValue(context: CommandContext<S>): T
+    abstract fun getValue(context: CommandContext<S>): V
 
-    abstract fun buildArgument(): RequiredArgumentBuilder<S, out T>
+    abstract fun buildArgument(): RequiredArgumentBuilder<S, T>
 }
 
-class RequiredArgument<S, T : Any>(
+class RequiredArgument<S, T>(
     private val name: String, private val type: ArgumentType<T>,
     private val getter: (CommandContext<S>, String) -> T
-) : CommandArgument<S, T>() {
+) : CommandArgument<S, T, T>() {
     override fun getValue(context: CommandContext<S>): T = getter(context, name)
 
     override fun buildArgument(): RequiredArgumentBuilder<S, T> {
@@ -38,28 +38,12 @@ class RequiredArgument<S, T : Any>(
     }
 }
 
-fun <S, T : Any> RequiredArgument<S, T>.optional() = OptionalArgument(this)
-fun <S, T : Any> RequiredArgument<S, T>.default(value: T) = DefaultArgument(this, value)
-
-class OptionalArgument<S, T : Any>(
-    private val argument: RequiredArgument<S, T>
-) : CommandArgument<S, T?>() {
-
-    override fun getValue(context: CommandContext<S>): T? = try {
-        argument.getValue(context)
-    } catch (e: IllegalArgumentException) {
-        null
-    }
-
-    override fun buildArgument() = argument.buildArgument()
-}
-
-class DefaultArgument<S, T : Any>(
+class OptionalArgument<S, T : D, D>(
     private val argument: RequiredArgument<S, T>,
-    private val default: T
-) : CommandArgument<S, T>() {
+    private val default: D
+) : CommandArgument<S, T, D>() {
 
-    override fun getValue(context: CommandContext<S>): T = try {
+    override fun getValue(context: CommandContext<S>) = try {
         argument.getValue(context)
     } catch (e: IllegalArgumentException) {
         default
@@ -67,3 +51,6 @@ class DefaultArgument<S, T : Any>(
 
     override fun buildArgument() = argument.buildArgument()
 }
+
+fun <S, T> RequiredArgument<S, T>.optional() = OptionalArgument(this, null)
+fun <S, T> RequiredArgument<S, T>.default(value: T) = OptionalArgument(this, value)

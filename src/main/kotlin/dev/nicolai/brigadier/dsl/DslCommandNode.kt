@@ -47,7 +47,7 @@ sealed class DslCommandNode<S, A : ArgumentBuilder<S, out A>>(
         return LiteralDslCommandNode(literal, contextRef).also { children += it }
     }
 
-    fun <T> argument(argument: CommandArgument<S, T>): ArgumentDslCommandNode<S, T> {
+    fun <T, V> argument(argument: CommandArgument<S, T, V>): ArgumentDslCommandNode<S, T, V> {
         return ArgumentDslCommandNode(argument, contextRef).also { children += it }
     }
 
@@ -83,15 +83,15 @@ class LiteralDslCommandNode<S>(
     private val literal: String,
     contextRef: ContextRef<S>
 ) : DslCommandNode<S, LiteralArgumentBuilder<S>>(contextRef) {
-    override fun buildNode() = LiteralArgumentBuilder.literal<S>(literal)
+    override fun buildNode(): LiteralArgumentBuilder<S> = LiteralArgumentBuilder.literal(literal)
 }
 
-class ArgumentDslCommandNode<S, T>(
-    private val argument: CommandArgument<S, T>,
+class ArgumentDslCommandNode<S, T, V>(
+    private val argument: CommandArgument<S, T, V>,
     contextRef: ContextRef<S>
-) : DslCommandNode<S, RequiredArgumentBuilder<S, out T>>(contextRef) {
+) : DslCommandNode<S, RequiredArgumentBuilder<S, T>>(contextRef) {
 
-    val getter: () -> T = { argument.getValue(contextRef.context) }
+    val getter: () -> V = { argument.getValue(contextRef.context) }
 
     override fun buildNode() = argument.buildArgument()
 }

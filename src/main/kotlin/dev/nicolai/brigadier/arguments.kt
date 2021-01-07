@@ -30,7 +30,7 @@ import com.mojang.brigadier.arguments.LongArgumentType.longArg
 import com.mojang.brigadier.arguments.StringArgumentType.*
 import com.mojang.brigadier.context.CommandContext
 
-private fun <T : Any> arg(
+private fun <T> arg(
     name: String, type: ArgumentType<T>,
     getter: (CommandContext<Any>, String) -> T
 ) = RequiredArgument(name, type, getter)

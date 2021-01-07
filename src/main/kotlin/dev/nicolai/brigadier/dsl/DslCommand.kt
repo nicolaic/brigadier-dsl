@@ -64,7 +64,7 @@ class DslCommandBuilder<S> internal constructor(private val dslNode: DslCommandN
         return builder
     }
 
-    fun <T : Any> arg(arg: RequiredArgument<S, T>, block: DslCommandBuilder<S>.(() -> T) -> Unit) {
+    fun <T> arg(arg: RequiredArgument<S, T>, block: DslCommandBuilder<S>.(() -> T) -> Unit) {
         val argNode = dslNode.argument(arg)
 
         val builder = DslCommandBuilder(argNode)
