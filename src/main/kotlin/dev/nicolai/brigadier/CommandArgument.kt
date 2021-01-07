@@ -25,6 +25,8 @@ sealed class CommandArgument<S, T, out V> {
     abstract fun getValue(context: CommandContext<S>): V
 
     abstract fun buildArgument(): RequiredArgumentBuilder<S, T>
+
+    abstract fun apply(block: RequiredArgumentBuilder<S, T>.() -> Unit): CommandArgument<S, T, V>
 }
 
 class RequiredArgument<S, T>(
@@ -33,8 +35,14 @@ class RequiredArgument<S, T>(
 ) : CommandArgument<S, T, T>() {
     override fun getValue(context: CommandContext<S>): T = getter(context, name)
 
-    override fun buildArgument(): RequiredArgumentBuilder<S, T> {
-        return RequiredArgumentBuilder.argument(name, type)
+    private var apply: (RequiredArgumentBuilder<S, T>.() -> Unit)? = null
+
+    override fun buildArgument(): RequiredArgumentBuilder<S, T> =
+        RequiredArgumentBuilder.argument<S, T>(name, type).also { apply?.invoke(it) }
+
+    override fun apply(block: RequiredArgumentBuilder<S, T>.() -> Unit): RequiredArgument<S, T> {
+        this.apply = block
+        return this
     }
 }
 
@@ -50,6 +58,10 @@ class OptionalArgument<S, T : D, D>(
     }
 
     override fun buildArgument() = argument.buildArgument()
+    override fun apply(block: RequiredArgumentBuilder<S, T>.() -> Unit): OptionalArgument<S, T, D> {
+        argument.apply(block)
+        return this
+    }
 }
 
 fun <S, T> RequiredArgument<S, T>.optional() = OptionalArgument(this, null)
