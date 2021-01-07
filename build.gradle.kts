@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.4.21"
     `java-library`
 }
 
@@ -10,5 +10,5 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation("com.mojang:brigadier:1.0.17")
+    api("com.mojang:brigadier:1.0.17")
 }
