@@ -16,11 +16,12 @@
 
 package dev.nicolai.brigadier.dsl
 
-import com.mojang.brigadier.Command
+import com.mojang.brigadier.Command.SINGLE_SUCCESS
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
+import dev.nicolai.brigadier.Command
 import dev.nicolai.brigadier.CommandArgument
 
 sealed class DslCommandNode<S, A : ArgumentBuilder<S, out A>>(
@@ -29,6 +30,7 @@ sealed class DslCommandNode<S, A : ArgumentBuilder<S, out A>>(
     private var executes: ((CommandContext<S>) -> Int)? = null
 
     private val children = mutableListOf<DslCommandNode<S, out ArgumentBuilder<S, *>>>()
+    private val subcommands = mutableListOf<Command<S>>()
 
     fun executes(command: (CommandContext<S>) -> Int) {
         executes = command
@@ -37,16 +39,20 @@ sealed class DslCommandNode<S, A : ArgumentBuilder<S, out A>>(
     fun runs(command: (S) -> Unit) {
         executes { context ->
             command(context.source)
-            Command.SINGLE_SUCCESS
+            SINGLE_SUCCESS
         }
     }
 
     fun literal(literal: String): LiteralDslCommandNode<S> {
-        return LiteralDslCommandNode(literal, contextRef).also { children += it}
+        return LiteralDslCommandNode(literal, contextRef).also { children += it }
     }
 
     fun <T> argument(argument: CommandArgument<S, T>): ArgumentDslCommandNode<S, T> {
-        return ArgumentDslCommandNode(argument, contextRef).also { children += it}
+        return ArgumentDslCommandNode(argument, contextRef).also { children += it }
+    }
+
+    fun subcommands(vararg commands: Command<S>) {
+        subcommands += commands
     }
 
     abstract fun buildNode(): A
@@ -61,9 +67,13 @@ sealed class DslCommandNode<S, A : ArgumentBuilder<S, out A>>(
             }
         }
 
+        subcommands
+            .map(Command<S>::buildLiteral)
+            .forEach(node::then)
+
         children
             .map { it.buildTree() }
-            .forEach { node.then(it) }
+            .forEach(node::then)
 
         return node
     }

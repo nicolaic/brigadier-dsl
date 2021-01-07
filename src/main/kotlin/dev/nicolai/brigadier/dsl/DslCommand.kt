@@ -70,6 +70,10 @@ class DslCommandBuilder<S> internal constructor(private val dslNode: DslCommandN
         val builder = DslCommandBuilder(argNode)
         block(builder, argNode.getter)
     }
+
+    fun subcommands(vararg commands: Command<S>) {
+        dslNode.subcommands(*commands)
+    }
 }
 
 fun <S> command(literal: String, block: DslCommandBuilder<S>.() -> Unit) = DslCommand(literal, block)
