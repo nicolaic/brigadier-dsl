@@ -36,37 +36,37 @@ class DslCommand<S>(
     }
 }
 
-class DslCommandBuilder<S> internal constructor(private val dslNode: DslCommandNode<S, *>) {
+class DslCommandBuilder<S>(private val dslTree: DslCommandTree<S, *>) {
 
     fun executes(command: (CommandContext<S>) -> Int) {
-        dslNode.executes(command)
+        dslTree.executes(command)
     }
 
     infix fun runs(command: (S) -> Unit) {
-        dslNode.runs(command)
+        dslTree.runs(command)
     }
 
     fun literal(literal: String, block: (DslCommandBuilder<S>.() -> Unit)? = null): DslCommandBuilder<S> {
-        val literalNode = dslNode.literal(literal)
+        val literalNode = dslTree.literal(literal)
 
         return DslCommandBuilder(literalNode).also { block?.invoke(it) }
     }
 
     fun literals(vararg literals: String, block: (DslCommandBuilder<S>.() -> Unit)? = null): DslCommandBuilder<S> {
-        val literalNode = literals.fold(dslNode) { node, literal -> node.literal(literal) }
+        val literalNode = literals.fold(dslTree) { node, literal -> node.literal(literal) }
 
         return DslCommandBuilder(literalNode).also { block?.invoke(it) }
     }
 
     fun <T> arg(arg: RequiredArgument<S, T>, block: DslCommandBuilder<S>.(() -> T) -> Unit) {
-        val argNode = dslNode.argument(arg)
+        val argNode = dslTree.argument(arg)
 
         val builder = DslCommandBuilder(argNode)
         block(builder, argNode.getter)
     }
 
     fun subcommands(vararg commands: Command<S>) {
-        dslNode.subcommands(*commands)
+        dslTree.subcommands(*commands)
     }
 }
 

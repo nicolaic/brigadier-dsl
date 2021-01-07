@@ -24,12 +24,12 @@ import com.mojang.brigadier.context.CommandContext
 import dev.nicolai.brigadier.Command
 import dev.nicolai.brigadier.CommandArgument
 
-sealed class DslCommandNode<S, A : ArgumentBuilder<S, out A>>(
+sealed class DslCommandTree<S, A : ArgumentBuilder<S, out A>>(
     private val contextRef: ContextRef<S>
 ) {
     private var command: ((CommandContext<S>) -> Int)? = null
 
-    private val children = mutableListOf<DslCommandNode<S, out ArgumentBuilder<S, *>>>()
+    private val children = mutableListOf<DslCommandTree<S, out ArgumentBuilder<S, *>>>()
     private val subcommands = mutableListOf<Command<S>>()
 
     fun executes(command: (CommandContext<S>) -> Int) {
@@ -82,14 +82,14 @@ sealed class DslCommandNode<S, A : ArgumentBuilder<S, out A>>(
 class LiteralDslCommandNode<S>(
     private val literal: String,
     contextRef: ContextRef<S>
-) : DslCommandNode<S, LiteralArgumentBuilder<S>>(contextRef) {
+) : DslCommandTree<S, LiteralArgumentBuilder<S>>(contextRef) {
     override fun buildNode(): LiteralArgumentBuilder<S> = LiteralArgumentBuilder.literal(literal)
 }
 
 class ArgumentDslCommandNode<S, T, V>(
     private val argument: CommandArgument<S, T, V>,
     contextRef: ContextRef<S>
-) : DslCommandNode<S, RequiredArgumentBuilder<S, T>>(contextRef) {
+) : DslCommandTree<S, RequiredArgumentBuilder<S, T>>(contextRef) {
 
     val getter: () -> V = { argument.getValue(contextRef.context) }
 
