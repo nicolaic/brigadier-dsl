@@ -37,13 +37,16 @@ private fun <T> arg(
 
 fun boolean(name: String) = arg(name, bool(), ::getBool)
 
-fun int(name: String, min: Int = Int.MIN_VALUE, max: Int = Int.MAX_VALUE) = arg(name, integer(min, max), ::getInteger)
-fun long(name: String, min: Long = Long.MIN_VALUE, max: Long = Long.MAX_VALUE) = arg(name, longArg(min, max), ::getLong)
+fun integer(name: String, min: Int = Int.MIN_VALUE, max: Int = Int.MAX_VALUE) =
+    arg(name, integer(min, max), ::getInteger)
 
-fun float(name: String, min: Float = Float.MIN_VALUE, max: Float = Float.MAX_VALUE) =
+fun long(name: String, min: Long = Long.MIN_VALUE, max: Long = Long.MAX_VALUE) =
+    arg(name, longArg(min, max), ::getLong)
+
+fun float(name: String, min: Float = -Float.MAX_VALUE, max: Float = Float.MAX_VALUE) =
     arg(name, floatArg(min, max), ::getFloat)
 
-fun double(name: String, min: Double = Double.MIN_VALUE, max: Double = Double.MAX_VALUE) =
+fun double(name: String, min: Double = -Double.MAX_VALUE, max: Double = Double.MAX_VALUE) =
     arg(name, doubleArg(min, max), ::getDouble)
 
 fun word(name: String) = arg(name, word(), ::getString)
