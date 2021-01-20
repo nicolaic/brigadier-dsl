@@ -16,9 +16,24 @@
 
 package dev.nicolai.brigadier
 
+import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 
-interface Command<S> {
+interface Command<in S> {
 
-    fun buildLiteral(): LiteralArgumentBuilder<S>
+    /**
+     * Builds a [literal][LiteralArgumentBuilder] argument that can be used by
+     * the [register][CommandDispatcher.register] function on a dispatcher to
+     * register this command.
+     */
+    fun buildLiteral(): LiteralArgumentBuilder<in S>
+}
+
+/**
+ * [Builds][Command.buildLiteral] a [literal][LiteralArgumentBuilder] argument
+ * from the specific [command] and registers it to this dispatcher.
+ */
+fun <S> CommandDispatcher<S>.register(command: Command<S>) {
+    @Suppress("UNCHECKED_CAST") // Unchecked cast is always safe
+    register(command.buildLiteral() as LiteralArgumentBuilder<S>)
 }
