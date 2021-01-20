@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("unused")
+
 package dev.nicolai.brigadier
 
 import com.mojang.brigadier.arguments.ArgumentType
@@ -29,26 +31,27 @@ import com.mojang.brigadier.arguments.LongArgumentType.getLong
 import com.mojang.brigadier.arguments.LongArgumentType.longArg
 import com.mojang.brigadier.arguments.StringArgumentType.*
 import com.mojang.brigadier.context.CommandContext
+import dev.nicolai.brigadier.dsl.DslCommandBuilder
 
-private fun <T> arg(
+fun <S, T> argument(
     name: String, type: ArgumentType<T>,
-    getter: (CommandContext<Any>, String) -> T
+    getter: (CommandContext<S>, String) -> T
 ) = RequiredArgument(name, type, getter)
 
-fun boolean(name: String) = arg(name, bool(), ::getBool)
+fun <S> DslCommandBuilder<S>.boolean(name: String) = argument<S, Boolean>(name, bool(), ::getBool)
 
-fun integer(name: String, min: Int = Int.MIN_VALUE, max: Int = Int.MAX_VALUE) =
-    arg(name, integer(min, max), ::getInteger)
+fun <S> DslCommandBuilder<S>.integer(name: String, min: Int = Int.MIN_VALUE, max: Int = Int.MAX_VALUE) =
+    argument<S, Int>(name, integer(min, max), ::getInteger)
 
-fun long(name: String, min: Long = Long.MIN_VALUE, max: Long = Long.MAX_VALUE) =
-    arg(name, longArg(min, max), ::getLong)
+fun <S> DslCommandBuilder<S>.long(name: String, min: Long = Long.MIN_VALUE, max: Long = Long.MAX_VALUE) =
+    argument<S, Long>(name, longArg(min, max), ::getLong)
 
-fun float(name: String, min: Float = -Float.MAX_VALUE, max: Float = Float.MAX_VALUE) =
-    arg(name, floatArg(min, max), ::getFloat)
+fun <S> DslCommandBuilder<S>.float(name: String, min: Float = -Float.MAX_VALUE, max: Float = Float.MAX_VALUE) =
+    argument<S, Float>(name, floatArg(min, max), ::getFloat)
 
-fun double(name: String, min: Double = -Double.MAX_VALUE, max: Double = Double.MAX_VALUE) =
-    arg(name, doubleArg(min, max), ::getDouble)
+fun <S> DslCommandBuilder<S>.double(name: String, min: Double = -Double.MAX_VALUE, max: Double = Double.MAX_VALUE) =
+    argument<S, Double>(name, doubleArg(min, max), ::getDouble)
 
-fun word(name: String) = arg(name, word(), ::getString)
-fun string(name: String) = arg(name, string(), ::getString)
-fun greedyString(name: String) = arg(name, greedyString(), ::getString)
+fun <S> DslCommandBuilder<S>.word(name: String) = argument<S, String>(name, word(), ::getString)
+fun <S> DslCommandBuilder<S>.string(name: String) = argument<S, String>(name, string(), ::getString)
+fun <S> DslCommandBuilder<S>.greedyString(name: String) = argument<S, String>(name, greedyString(), ::getString)
