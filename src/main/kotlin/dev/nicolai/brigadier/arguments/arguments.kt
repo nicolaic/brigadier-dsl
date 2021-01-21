@@ -16,7 +16,7 @@
 
 @file:Suppress("unused")
 
-package dev.nicolai.brigadier
+package dev.nicolai.brigadier.arguments
 
 import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.arguments.BoolArgumentType.bool
@@ -31,6 +31,7 @@ import com.mojang.brigadier.arguments.LongArgumentType.getLong
 import com.mojang.brigadier.arguments.LongArgumentType.longArg
 import com.mojang.brigadier.arguments.StringArgumentType.*
 import com.mojang.brigadier.context.CommandContext
+import dev.nicolai.brigadier.RequiredArgument
 import dev.nicolai.brigadier.dsl.DslCommandBuilder
 
 fun <S, T> argument(
