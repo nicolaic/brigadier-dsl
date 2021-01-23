@@ -24,16 +24,18 @@ import com.mojang.brigadier.context.CommandContext
 import dev.nicolai.brigadier.Command
 import dev.nicolai.brigadier.CommandArgument
 
-sealed class DslCommandTree<S, A : ArgumentBuilder<S, out A>>(
+sealed class DslCommandTree<S, A : ArgumentBuilder<S, A>>(
     private val contextRef: ContextRef<S>
 ) {
+    private var currentNode: DslCommandTree<S, *> = this
+
     private var command: ((CommandContext<S>) -> Int)? = null
 
     private val children = mutableListOf<DslCommandTree<S, out ArgumentBuilder<S, *>>>()
     private val subcommands = mutableListOf<Command<S>>()
 
     fun executes(command: (CommandContext<S>) -> Int) {
-        this.command = command
+        currentNode.command = command
     }
 
     fun runs(command: (S) -> Unit) {
@@ -47,18 +49,27 @@ sealed class DslCommandTree<S, A : ArgumentBuilder<S, out A>>(
         literal: String,
         apply: (LiteralArgumentBuilder<S>.() -> Unit)?
     ): LiteralDslCommandNode<S> {
-        return LiteralDslCommandNode(literal, apply, contextRef).also { children += it }
+        return LiteralDslCommandNode(literal, apply, contextRef).also { currentNode.children += it }
     }
 
     fun <T, V> argument(
         argument: CommandArgument<S, T, V>,
         apply: (RequiredArgumentBuilder<S, T>.() -> Unit)?
     ): ArgumentDslCommandNode<S, T, V> {
-        return ArgumentDslCommandNode(argument, apply, contextRef).also { children += it }
+        return ArgumentDslCommandNode(argument, apply, contextRef).also { currentNode.children += it }
+    }
+
+    fun <T, V> inlineArgument(
+        argument: CommandArgument<S, T, V>
+    ): ArgumentDslCommandNode<S, T, V> {
+        return ArgumentDslCommandNode(argument, null, contextRef).also {
+            currentNode.children += it
+            currentNode = it
+        }
     }
 
     fun subcommands(vararg commands: Command<S>) {
-        subcommands += commands
+        currentNode.subcommands += commands
     }
 
     abstract fun buildNode(): A

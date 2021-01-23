@@ -20,7 +20,10 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import dev.nicolai.brigadier.Command
+import dev.nicolai.brigadier.CommandArgument
 import dev.nicolai.brigadier.RequiredArgument
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 open class DslCommand<S>(
     private val literal: String,
@@ -78,6 +81,14 @@ class DslCommandBuilder<S>(private val dslTree: DslCommandTree<S, *>) {
 
         val builder = DslCommandBuilder(argNode)
         block(builder, argNode.getter)
+    }
+
+    operator fun <T, V> CommandArgument<S, T, V>.provideDelegate(
+        thisRef: Any?,
+        property: KProperty<*>
+    ): ReadOnlyProperty<Any?, V> {
+        val argument = dslTree.inlineArgument(this)
+        return ReadOnlyProperty { _, _ -> argument.getter() }
     }
 
     fun subcommands(vararg commands: Command<S>) {
