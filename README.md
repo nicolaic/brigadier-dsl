@@ -2,9 +2,7 @@
 
 [brigadier-github]: https://github.com/Mojang/brigadier/
 
-[wiki]: [https://github.com/nicolaic/brigadier-dsl/wiki]
-
-[wiki-motivation]: [https://github.com/nicolaic/brigadier-dsl/wiki/moviation]
+[wiki-motivation]: https://github.com/nicolaic/brigadier-dsl/wiki/Motivation
 
 # Brigadier DSL [![License][license-badge]](/LICENSE)
 

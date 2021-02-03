@@ -50,12 +50,6 @@ sealed class DslCommandTree<S, A : ArgumentBuilder<S, A>>(
         }
     }
 
-    // All end nodes must have a executes
-    //  (is end node if has no children)
-    //
-    // Literal and required can have any children
-    // Optional can only have
-
     fun addChild(node: DslCommandTree<S, *>) {
         inlineNode.children += node
     }
