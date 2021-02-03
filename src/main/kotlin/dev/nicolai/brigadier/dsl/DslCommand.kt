@@ -18,12 +18,12 @@ package dev.nicolai.brigadier.dsl
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
-import com.mojang.brigadier.context.CommandContext
 import dev.nicolai.brigadier.Command
 import dev.nicolai.brigadier.CommandArgument
 import dev.nicolai.brigadier.RequiredArgument
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
+import com.mojang.brigadier.Command as BrigadierCommand
 
 open class DslCommand<S>(
     private val literal: String,
@@ -33,7 +33,7 @@ open class DslCommand<S>(
 
     constructor(literal: String, builderBlock: DslCommandBuilder<S>.() -> Unit) : this(literal, null, builderBlock)
 
-    override fun buildLiteral(): LiteralArgumentBuilder<S> {
+    final override fun buildLiteral(): LiteralArgumentBuilder<S> {
         val dslNode = LiteralDslCommandNode(literal, apply, ContextRef())
 
         val builder = DslCommandBuilder(dslNode)
@@ -45,7 +45,7 @@ open class DslCommand<S>(
 
 class DslCommandBuilder<S>(private val dslTree: DslCommandTree<S, *>) {
 
-    fun executes(command: (CommandContext<S>) -> Int) {
+    fun executes(command: BrigadierCommand<S>) {
         dslTree.executes(command)
     }
 

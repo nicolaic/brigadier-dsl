@@ -2,6 +2,8 @@
 
 [brigadier-github]: https://github.com/Mojang/brigadier/
 
+[wiki]: [https://github.com/nicolaic/brigadier-dsl/wiki]
+
 [wiki-motivation]: [https://github.com/nicolaic/brigadier-dsl/wiki/moviation]
 
 # Brigadier DSL [![License][license-badge]](/LICENSE)
@@ -48,7 +50,8 @@ val whisper = command<Any>("whisper") {
     val message by greedyString("message")
 
     // Code to be run when the command is executed
-    runs {
+    // Command source can be accessed as an argument
+    runs { source ->
         // Access argument value as variables
         println("Sent '$message' to $recipient")
     }
