@@ -34,25 +34,30 @@ import com.mojang.brigadier.context.CommandContext
 import dev.nicolai.brigadier.RequiredArgument
 import dev.nicolai.brigadier.dsl.DslCommandBuilder
 
-fun <S, T> argument(
+fun <S, T, V> argument(
     name: String, type: ArgumentType<T>,
-    getter: (CommandContext<S>, String) -> T
+    getter: (CommandContext<S>, String) -> V
 ) = RequiredArgument(name, type, getter)
 
-fun <S> DslCommandBuilder<S>.boolean(name: String) = argument<S, Boolean>(name, bool(), ::getBool)
+fun <S, T> argumentImplied(
+    name: String, type: ArgumentType<T>,
+    getter: (CommandContext<S>, String) -> T
+) = argument(name, type, getter)
+
+fun <S> DslCommandBuilder<S>.boolean(name: String) = argumentImplied<S, Boolean>(name, bool(), ::getBool)
 
 fun <S> DslCommandBuilder<S>.integer(name: String, min: Int = Int.MIN_VALUE, max: Int = Int.MAX_VALUE) =
-    argument<S, Int>(name, integer(min, max), ::getInteger)
+    argumentImplied<S, Int>(name, integer(min, max), ::getInteger)
 
 fun <S> DslCommandBuilder<S>.long(name: String, min: Long = Long.MIN_VALUE, max: Long = Long.MAX_VALUE) =
-    argument<S, Long>(name, longArg(min, max), ::getLong)
+    argumentImplied<S, Long>(name, longArg(min, max), ::getLong)
 
 fun <S> DslCommandBuilder<S>.float(name: String, min: Float = -Float.MAX_VALUE, max: Float = Float.MAX_VALUE) =
-    argument<S, Float>(name, floatArg(min, max), ::getFloat)
+    argumentImplied<S, Float>(name, floatArg(min, max), ::getFloat)
 
 fun <S> DslCommandBuilder<S>.double(name: String, min: Double = -Double.MAX_VALUE, max: Double = Double.MAX_VALUE) =
-    argument<S, Double>(name, doubleArg(min, max), ::getDouble)
+    argumentImplied<S, Double>(name, doubleArg(min, max), ::getDouble)
 
-fun <S> DslCommandBuilder<S>.word(name: String) = argument<S, String>(name, word(), ::getString)
-fun <S> DslCommandBuilder<S>.string(name: String) = argument<S, String>(name, string(), ::getString)
-fun <S> DslCommandBuilder<S>.greedyString(name: String) = argument<S, String>(name, greedyString(), ::getString)
+fun <S> DslCommandBuilder<S>.word(name: String) = argumentImplied<S, String>(name, word(), ::getString)
+fun <S> DslCommandBuilder<S>.string(name: String) = argumentImplied<S, String>(name, string(), ::getString)
+fun <S> DslCommandBuilder<S>.greedyString(name: String) = argumentImplied<S, String>(name, greedyString(), ::getString)

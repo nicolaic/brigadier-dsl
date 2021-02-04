@@ -72,10 +72,10 @@ class DslCommandBuilder<S>(private val dslTree: DslCommandTree<S, *>) {
         return DslCommandBuilder(literalNode).also { block?.invoke(it) }
     }
 
-    fun <T> arg(
-        arg: RequiredArgument<S, T>,
+    fun <T, V> arg(
+        arg: RequiredArgument<S, T, V>,
         apply: (RequiredArgumentBuilder<S, T>.() -> Unit)? = null,
-        block: DslCommandBuilder<S>.(() -> T) -> Unit
+        block: DslCommandBuilder<S>.(() -> V) -> Unit
     ) {
         val argNode = dslTree.argument(arg, apply)
 

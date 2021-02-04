@@ -62,10 +62,10 @@ sealed class DslCommandTree<S, A : ArgumentBuilder<S, A>>(
         return LiteralDslCommandNode(literal, apply, contextRef).also(inlineNode::addChild)
     }
 
-    fun <T> argument(
-        argument: RequiredArgument<S, T>,
+    fun <T, V> argument(
+        argument: RequiredArgument<S, T, V>,
         apply: (RequiredArgumentBuilder<S, T>.() -> Unit)?
-    ): ArgumentDslCommandNode<S, T, T> {
+    ): ArgumentDslCommandNode<S, T, V> {
         check(inlineNode.optionalArguments.isEmpty()) { "You cannot add nesting arguments after optional inline arguments" }
         return ArgumentDslCommandNode(argument, apply, contextRef).also(inlineNode::addChild)
     }
@@ -74,7 +74,7 @@ sealed class DslCommandTree<S, A : ArgumentBuilder<S, A>>(
         argument: CommandArgument<S, T, V>
     ): ArgumentDslCommandNode<S, T, V> {
         return ArgumentDslCommandNode(argument, null, contextRef).also {
-            if (argument is OptionalArgument<S, *, *>) {
+            if (argument is OptionalArgument<S, *, *, *>) {
                 check(inlineNode.command == null) { "You cannot add optional inline arguments after the command has been set" }
                 inlineNode.optionalArguments += it
             } else {
