@@ -30,17 +30,18 @@ import com.mojang.brigadier.Command as BrigadierCommand
 sealed class DslCommandTree<S, A : ArgumentBuilder<S, A>>(
     private val contextRef: ContextRef<S>
 ) {
-    private var inlineNode: DslCommandTree<S, *> = this
 
-    private var command: BrigadierCommand<S>? = null
+    protected var command: BrigadierCommand<S>? = null
 
     private val children = mutableListOf<DslCommandTree<S, out ArgumentBuilder<S, *>>>()
-    private val optionalArguments = mutableListOf<ArgumentDslCommandNode<S, *, *>>()
 
     private val subcommands = mutableListOf<Command<S>>()
 
-    fun executes(command: BrigadierCommand<S>) {
-        inlineNode.command = command
+    private var apply: (A.() -> Unit)? = null
+
+    open fun executes(command: BrigadierCommand<S>) {
+        check(this.command == null) { "Cannot reassign executes command" }
+        this.command = command
     }
 
     fun runs(command: (S) -> Unit) {
@@ -50,66 +51,60 @@ sealed class DslCommandTree<S, A : ArgumentBuilder<S, A>>(
         }
     }
 
-    fun addChild(node: DslCommandTree<S, *>) {
-        inlineNode.children += node
+    fun apply(apply: (A.() -> Unit)?) {
+        this.apply = apply
     }
 
-    fun literal(
+    private fun <N : DslCommandTree<S, A>, A : ArgumentBuilder<S, T>, T> addChildAndApply(
+        node: N,
+        apply: (A.() -> Unit)?
+    ): N {
+        return node.also(children::add).also { it.apply(apply) }
+    }
+
+    open fun literal(
         literal: String,
         apply: (LiteralArgumentBuilder<S>.() -> Unit)?
-    ): LiteralDslCommandNode<S> {
-        check(inlineNode.optionalArguments.isEmpty()) { "You cannot add literals after optional inline arguments" }
-        return LiteralDslCommandNode(literal, apply, contextRef).also(inlineNode::addChild)
+    ): LiteralNode<S> {
+        return addChildAndApply(LiteralNode(literal, contextRef), apply)
     }
 
-    fun <T, V> argument(
-        argument: RequiredArgument<S, T, V>,
+    open fun <T, V> argument(
+        argument: CommandArgument<S, T, V>,
         apply: (RequiredArgumentBuilder<S, T>.() -> Unit)?
-    ): ArgumentDslCommandNode<S, T, V> {
-        check(inlineNode.optionalArguments.isEmpty()) { "You cannot add nesting arguments after optional inline arguments" }
-        return ArgumentDslCommandNode(argument, apply, contextRef).also(inlineNode::addChild)
-    }
-
-    fun <T, V> inlineArgument(
-        argument: CommandArgument<S, T, V>
-    ): ArgumentDslCommandNode<S, T, V> {
-        return ArgumentDslCommandNode(argument, null, contextRef).also {
-            if (argument is OptionalArgument<S, *, *, *>) {
-                check(inlineNode.command == null) { "You cannot add optional inline arguments after the command has been set" }
-                inlineNode.optionalArguments += it
-            } else {
-                check(inlineNode.optionalArguments.isEmpty()) { "You cannot add required inline arguments after optional inline arguments" }
-                inlineNode.addChild(it)
-                inlineNode = it
-            }
-        }
-    }
-
-    fun subcommands(vararg commands: Command<S>) {
-        check(children.isEmpty()) {
-            "Subcommands is not scoped to inline arguments, and therefore" +
-                    "must be called before any arguments are registered"
+    ): ArgumentNode<S, T, V> {
+        val argumentNode = when (argument) {
+            is RequiredArgument -> requiredArgument(argument)
+            is OptionalArgument<S, T, *, V> -> optionalArgument(argument)
         }
 
+        return addChildAndApply(argumentNode, null)
+    }
+
+    open fun subcommands(vararg commands: Command<S>) {
         subcommands += commands
     }
 
-    protected abstract fun buildNode(): A
+    protected open fun <T, V> requiredArgument(argument: RequiredArgument<S, T, V>): RequiredArgumentNode<S, T, V> {
+        return RequiredArgumentNode(argument, contextRef)
+    }
+
+    protected open fun <T, V> optionalArgument(argument: OptionalArgument<S, T, *, V>): OptionalArgumentNode<S, T, V> {
+        return OptionalArgumentNode(this, argument, contextRef)
+    }
+
+    abstract fun buildNode(): A
 
     fun buildTree(): A {
         val node = buildNode()
 
-        check(children.isNotEmpty() || command != null) {
-            "A node must either have a command or at least one child"
-        }
+        apply?.invoke(node)
 
         command?.let { command ->
             node.executes { context ->
                 contextRef.context = context
                 command.run(context)
             }
-
-            buildOptionalArgumentsToNode(node, command)
         }
 
         subcommands
@@ -122,36 +117,61 @@ sealed class DslCommandTree<S, A : ArgumentBuilder<S, A>>(
 
         return node
     }
+}
 
-    private fun buildOptionalArgumentsToNode(node: A, command: BrigadierCommand<S>) {
-        if (optionalArguments.isEmpty()) return
+class LiteralNode<S>(
+    private val literal: String,
+    contextRef: ContextRef<S>
+) : DslCommandTree<S, LiteralArgumentBuilder<S>>(contextRef) {
 
-        optionalArguments.forEach { it.executes(command) }
-
-        node.then(optionalArguments
-            .reduceRight { arg, acc -> arg.also { it.addChild(acc) } }
-            .buildTree())
+    override fun buildNode(): LiteralArgumentBuilder<S> {
+        return LiteralArgumentBuilder.literal(literal)
     }
 }
 
-class LiteralDslCommandNode<S>(
-    private val literal: String,
-    private val apply: (LiteralArgumentBuilder<S>.() -> Unit)?,
-    contextRef: ContextRef<S>
-) : DslCommandTree<S, LiteralArgumentBuilder<S>>(contextRef) {
-    override fun buildNode(): LiteralArgumentBuilder<S> =
-        LiteralArgumentBuilder.literal<S>(literal).also { apply?.invoke(it) }
-}
-
-class ArgumentDslCommandNode<S, T, V>(
+sealed class ArgumentNode<S, T, V>(
     private val argument: CommandArgument<S, T, V>,
-    private val apply: (RequiredArgumentBuilder<S, T>.() -> Unit)?,
     contextRef: ContextRef<S>
 ) : DslCommandTree<S, RequiredArgumentBuilder<S, T>>(contextRef) {
 
     val getter: () -> V = { argument.getValue(contextRef.context) }
 
-    override fun buildNode() = argument.also { apply?.let(it::apply) }.buildArgument()
+    override fun buildNode(): RequiredArgumentBuilder<S, T> {
+        return argument.buildArgument()
+    }
+}
+
+class RequiredArgumentNode<S, T, V>(
+    argument: RequiredArgument<S, T, V>,
+    contextRef: ContextRef<S>
+) : ArgumentNode<S, T, V>(argument, contextRef)
+
+class OptionalArgumentNode<S, T, V>(
+    private val parent: DslCommandTree<S, *>,
+    argument: OptionalArgument<S, T, *, V>,
+    contextRef: ContextRef<S>
+) : ArgumentNode<S, T, V>(argument, contextRef) {
+
+    override fun literal(
+        literal: String,
+        apply: (LiteralArgumentBuilder<S>.() -> Unit)?
+    ): Nothing {
+        TODO("Only if no command is set")
+    }
+
+    override fun <T, V> requiredArgument(argument: RequiredArgument<S, T, V>): Nothing {
+        TODO("Only if no command is set")
+    }
+
+    override fun <T, V> optionalArgument(argument: OptionalArgument<S, T, *, V>): OptionalArgumentNode<S, T, V> {
+        check(command == null) // TODO: Throw exception if executes is set
+        return super.optionalArgument(argument)
+    }
+
+    override fun executes(command: BrigadierCommand<S>) {
+        super.executes(command)
+        parent.executes(command)
+    }
 }
 
 class ContextRef<S> {

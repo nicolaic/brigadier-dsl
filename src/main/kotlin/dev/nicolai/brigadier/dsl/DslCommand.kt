@@ -28,29 +28,30 @@ import com.mojang.brigadier.Command as BrigadierCommand
 open class DslCommand<S>(
     private val literal: String,
     private val apply: (LiteralArgumentBuilder<S>.() -> Unit)? = null,
-    private val builderBlock: (DslCommandBuilder<S>.() -> Unit)
+    private val block: (DslCommandBuilder<S>.() -> Unit)
 ) : Command<S> {
 
     constructor(literal: String, builderBlock: DslCommandBuilder<S>.() -> Unit) : this(literal, null, builderBlock)
 
     final override fun buildLiteral(): LiteralArgumentBuilder<S> {
-        val dslNode = LiteralDslCommandNode(literal, apply, ContextRef())
+        val dslNode = LiteralNode<S>(literal, ContextRef())
+        dslNode.apply(apply)
 
         val builder = DslCommandBuilder(dslNode)
-        builder.apply(builderBlock)
+        block(builder)
 
         return dslNode.buildTree()
     }
 }
 
-class DslCommandBuilder<S>(private val dslTree: DslCommandTree<S, *>) {
+class DslCommandBuilder<S>(private var dslNode: DslCommandTree<S, *>) {
 
     fun executes(command: BrigadierCommand<S>) {
-        dslTree.executes(command)
+        dslNode.executes(command)
     }
 
     infix fun runs(command: (S) -> Unit) {
-        dslTree.runs(command)
+        dslNode.runs(command)
     }
 
     fun literal(
@@ -58,7 +59,7 @@ class DslCommandBuilder<S>(private val dslTree: DslCommandTree<S, *>) {
         apply: (LiteralArgumentBuilder<S>.() -> Unit)? = null,
         block: (DslCommandBuilder<S>.() -> Unit)? = null
     ): DslCommandBuilder<S> {
-        val literalNode = dslTree.literal(literal, apply)
+        val literalNode = dslNode.literal(literal, apply)
 
         return DslCommandBuilder(literalNode).also { block?.invoke(it) }
     }
@@ -67,7 +68,7 @@ class DslCommandBuilder<S>(private val dslTree: DslCommandTree<S, *>) {
         vararg literals: String,
         block: (DslCommandBuilder<S>.() -> Unit)? = null
     ): DslCommandBuilder<S> {
-        val literalNode = literals.fold(dslTree) { node, literal -> node.literal(literal, null) }
+        val literalNode = literals.fold(dslNode) { node, literal -> node.literal(literal, null) }
 
         return DslCommandBuilder(literalNode).also { block?.invoke(it) }
     }
@@ -75,9 +76,9 @@ class DslCommandBuilder<S>(private val dslTree: DslCommandTree<S, *>) {
     fun <T, V> arg(
         arg: RequiredArgument<S, T, V>,
         apply: (RequiredArgumentBuilder<S, T>.() -> Unit)? = null,
-        block: DslCommandBuilder<S>.(() -> V) -> Unit
+        block: DslCommandBuilder<S>.(getter: () -> V) -> Unit
     ) {
-        val argNode = dslTree.argument(arg, apply)
+        val argNode = dslNode.argument(arg, apply)
 
         val builder = DslCommandBuilder(argNode)
         block(builder, argNode.getter)
@@ -87,12 +88,12 @@ class DslCommandBuilder<S>(private val dslTree: DslCommandTree<S, *>) {
         thisRef: Any?,
         property: KProperty<*>
     ): ReadOnlyProperty<Any?, V> {
-        val argument = dslTree.inlineArgument(this)
+        val argument = dslNode.argument(this, null).also { dslNode = it }
         return ReadOnlyProperty { _, _ -> argument.getter() }
     }
 
     fun subcommands(vararg commands: Command<S>) {
-        dslTree.subcommands(*commands)
+        dslNode.subcommands(*commands)
     }
 }
 
