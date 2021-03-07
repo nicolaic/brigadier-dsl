@@ -44,6 +44,9 @@ fun <S, T> argumentImplied(
     getter: (CommandContext<S>, String) -> T
 ) = argument(name, type, getter)
 
+inline fun <S, reified V> impliedGetter(): ((CommandContext<S>, String) -> V) =
+    { context, name -> context.getArgument(name, V::class.java) }
+
 fun <S> DslCommandBuilder<S>.boolean(name: String) = argumentImplied<S, Boolean>(name, bool(), ::getBool)
 
 fun <S> DslCommandBuilder<S>.integer(name: String, min: Int = Int.MIN_VALUE, max: Int = Int.MAX_VALUE) =

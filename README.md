@@ -25,7 +25,7 @@ makes it easier to write commands. For more information read the [Motivation][wi
 
 ```kotlin
 repositories {
-    maven(url = "https://maven.pkg.github.com/nicolaic/brigadier-dsl")
+    mavenCentral()
 }
 ```
 
@@ -44,16 +44,19 @@ dependencies {
 import dev.nicolai.brigadier.dsl.command
 import dev.nicolai.brigadier.arguments.*
 
-val whisper = command<Any>("whisper") {
+// Declare command with source of type MessageSender
+val whisper = command<MessageSender>("whisper") {
     // Declare our recipient and message arguments
     val recipient by string("recipient")
     val message by greedyString("message")
 
     // Code to be run when the command is executed
-    // Command source can be accessed as an argument
-    runs { source ->
+    runs {
         // Access argument value as variables
-        println("Sent '$message' to $recipient")
+        val feedback = "Sent '$message' to $recipient"
+
+        // Source and context are implicitly available in the runs block
+        source.sendFeedback(feedback)
     }
 }
 

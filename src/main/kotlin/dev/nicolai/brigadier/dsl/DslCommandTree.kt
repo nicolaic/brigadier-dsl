@@ -21,10 +21,7 @@ import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
-import dev.nicolai.brigadier.Command
-import dev.nicolai.brigadier.CommandArgument
-import dev.nicolai.brigadier.OptionalArgument
-import dev.nicolai.brigadier.RequiredArgument
+import dev.nicolai.brigadier.*
 import com.mojang.brigadier.Command as BrigadierCommand
 
 sealed class DslCommandTree<S, A : ArgumentBuilder<S, A>>(
@@ -44,9 +41,14 @@ sealed class DslCommandTree<S, A : ArgumentBuilder<S, A>>(
         this.command = command
     }
 
-    fun runs(command: (S) -> Unit) {
+    fun runs(command: ExecutableCommand<S>) {
         executes { context ->
-            command(context.source)
+            val execution = object : ExecutionContext<S> {
+                override val context = context
+                override val source = context.source
+            }
+
+            command(execution)
             SINGLE_SUCCESS
         }
     }
