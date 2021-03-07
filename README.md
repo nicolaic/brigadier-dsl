@@ -1,10 +1,12 @@
 [license-badge]: https://img.shields.io/github/license/nicolaic/brigadier-dsl.svg
+[actions-badge]: https://github.com/nicolaic/brigadier-dsl/actions/workflows/gradle.yml/badge.svg
+[actions-gradle]: https://github.com/nicolaic/brigadier-dsl/actions/workflows/gradle.yml
 
 [brigadier-github]: https://github.com/Mojang/brigadier/
 
 [wiki-motivation]: https://github.com/nicolaic/brigadier-dsl/wiki/Motivation
 
-# Brigadier DSL [![License][license-badge]](/LICENSE)
+# Brigadier DSL [![License][license-badge]](/LICENSE) [![Kotlin CI with Gradle][actions-badge]][actions-gradle]
 
 Brigadier DSL is a Kotlin library that adds a new fluent DSL on top of [Mojang's Brigadier][brigadier-github], that
 makes it easier to write commands. For more information read the [Motivation][wiki-motivation] page.
