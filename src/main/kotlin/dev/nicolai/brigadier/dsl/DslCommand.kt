@@ -17,11 +17,9 @@
 package dev.nicolai.brigadier.dsl
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
-import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import dev.nicolai.brigadier.Command
 import dev.nicolai.brigadier.CommandArgument
 import dev.nicolai.brigadier.ExecutableCommand
-import dev.nicolai.brigadier.RequiredArgument
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 import com.mojang.brigadier.Command as BrigadierCommand
@@ -74,17 +72,6 @@ class DslCommandBuilder<S>(private var dslNode: DslCommandTree<S, *>) {
         val literalNode = literals.fold(dslNode) { node, literal -> node.literal(literal, null) }
 
         return DslCommandBuilder(literalNode).also { block?.invoke(it) }
-    }
-
-    fun <T, V> arg(
-        arg: RequiredArgument<S, T, V>,
-        apply: (RequiredArgumentBuilder<S, T>.() -> Unit)? = null,
-        block: DslCommandBuilder<S>.(getter: () -> V) -> Unit
-    ) {
-        val argNode = dslNode.argument(arg, apply)
-
-        val builder = DslCommandBuilder(argNode)
-        block(builder, argNode.getter)
     }
 
     operator fun <T, V> CommandArgument<S, T, V>.provideDelegate(
